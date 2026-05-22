@@ -1,0 +1,86 @@
+{
+  "entities": {
+    "Student": {
+      "title": "Student",
+      "description": "Pre-saved student roll numbers",
+      "type": "object",
+      "properties": {
+        "rollNumber": { "type": "string", "description": "Unique roll number" },
+        "name": { "type": "string", "description": "Student name" }
+      },
+      "required": ["rollNumber", "name"]
+    },
+    "Result": {
+      "title": "Result",
+      "description": "Calculated results for students",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string", "description": "Owner of the record" },
+        "rollNumber": { "type": "string", "description": "Reference to student" },
+        "studentName": { "type": "string", "description": "Student name at time of result" },
+        "marks": { 
+          "type": "object", 
+          "description": "Map of subject name to score"
+        },
+        "totalMarks": { "type": "number" },
+        "average": { "type": "number" },
+        "passMark": { "type": "number", "description": "Pass mark at time of calculation" },
+        "status": { "type": "string", "enum": ["Pass", "Fail"] },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "savedToGallery": { "type": "boolean", "description": "Whether the PDF transcript is saved to the gallery" },
+        "galleryNotes": { "type": "string", "description": "Optional custom annotations for the saved transcript" }
+      },
+      "required": ["userId", "rollNumber", "marks", "totalMarks", "average", "passMark", "status", "createdAt"]
+    },
+    "Setting": {
+      "title": "User Setting",
+      "description": "App settings for the user",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "passMark": { "type": "number" },
+        "defaultSubjects": { 
+          "type": "array",
+          "description": "List of strings"
+        }
+      },
+      "required": ["userId", "passMark"]
+    },
+    "QuestionPaper": {
+      "title": "Question Paper",
+      "description": "Generated question papers",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string", "description": "Owner of the record" },
+        "title": { "type": "string", "description": "Title of the exam" },
+        "subject": { "type": "string", "description": "Subject Select (Math, English, Science)" },
+        "difficulty": { "type": "string", "description": "Easy, Medium, or Hard" },
+        "type": { "type": "string", "description": "MCQ, MCQ + CQ, Short Question" },
+        "language": { "type": "string", "description": "Bangla or English" },
+        "timerEnabled": { "type": "boolean", "description": "Is exam timer set" },
+        "timerDuration": { "type": "number", "description": "Timer duration in minutes" },
+        "questions": { "type": "array", "description": "List of generated questions" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["userId", "title", "subject", "difficulty", "type", "language", "timerEnabled", "timerDuration", "questions", "createdAt"]
+    }
+  },
+  "firestore": {
+    "/students/{studentId}": {
+      "schema": "Student",
+      "description": "Global list of available students"
+    },
+    "/results/{resultId}": {
+      "schema": "Result",
+      "description": "Historical results"
+    },
+    "/settings/{userId}": {
+      "schema": "Setting",
+      "description": "User specific settings"
+    },
+    "/questionPapers/{paperId}": {
+      "schema": "QuestionPaper",
+      "description": "History of generated Question Papers"
+    }
+  }
+}

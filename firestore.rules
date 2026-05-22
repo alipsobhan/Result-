@@ -1,0 +1,96 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Default deny
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // Helper functions
+    function isValidId(id) {
+      return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+    function isSignedIn() {
+      return request.auth != null;
+    }
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+    function incoming() {
+      return request.resource.data;
+    }
+    function existing() {
+      return resource.data;
+    }
+
+    // Validation Blueprints
+    function isValidStudent(data) {
+      return data.rollNumber is string && data.rollNumber.size() <= 20
+          && data.name is string && data.name.size() <= 100;
+    }
+
+    function isValidResult(data) {
+      return data.userId == request.auth.uid
+          && data.rollNumber is string && data.rollNumber.size() <= 20
+          && data.studentName is string && data.studentName.size() <= 100
+          && data.marks is map
+          && data.totalMarks is number
+          && data.average is number
+          && data.passMark is number
+          && data.status in ['Pass', 'Fail']
+          && data.createdAt == request.time
+          && (data.get('savedToGallery', null) == null || data.savedToGallery is bool)
+          && (data.get('galleryNotes', null) == null || (data.galleryNotes is string && data.galleryNotes.size() <= 500));
+    }
+
+    function isValidSetting(data) {
+      return data.userId == request.auth.uid
+          && data.passMark is number
+          && (data.get('defaultSubjects', null) == null || data.defaultSubjects is list);
+    }
+
+    function isValidQuestionPaper(data) {
+      return data.userId == request.auth.uid
+          && data.title is string && data.title.size() <= 200
+          && data.subject is string && data.subject.size() <= 100
+          && data.difficulty is string && data.difficulty.size() <= 50
+          && data.type is string && data.type.size() <= 50
+          && data.language is string && data.language.size() <= 50
+          && data.timerEnabled is bool
+          && data.timerDuration is number
+          && data.questions is list
+          && data.createdAt == request.time;
+    }
+
+    // Collection matches
+    match /students/{studentId} {
+      allow read: if isSignedIn();
+      allow create: if isSignedIn() && isValidStudent(incoming());
+      allow update: if isSignedIn() && isValidStudent(incoming());
+      allow delete: if false;
+    }
+
+    match /results/{resultId} {
+      allow list: if isSignedIn() && resource.data.userId == request.auth.uid;
+      allow get: if isSignedIn() && resource.data.userId == request.auth.uid;
+      allow create: if isSignedIn() && isValidResult(incoming());
+      allow update: if isOwner(existing().userId) && isValidResult(incoming())
+                   && incoming().diff(existing()).affectedKeys().hasOnly(['marks', 'totalMarks', 'average', 'status', 'passMark', 'savedToGallery', 'galleryNotes']);
+      allow delete: if isOwner(existing().userId);
+    }
+
+    match /settings/{userId} {
+      allow read: if isOwner(userId);
+      allow write: if isOwner(userId) && isValidSetting(incoming());
+    }
+
+    match /questionPapers/{paperId} {
+      allow list: if isSignedIn() && resource.data.userId == request.auth.uid;
+      allow get: if isSignedIn() && resource.data.userId == request.auth.uid;
+      allow create: if isSignedIn() && isValidQuestionPaper(incoming());
+      allow update: if isOwner(existing().userId) && isValidQuestionPaper(incoming())
+                   && incoming().diff(existing()).affectedKeys().hasOnly(['title', 'timerEnabled', 'timerDuration', 'questions']);
+      allow delete: if isOwner(existing().userId);
+    }
+  }
+}

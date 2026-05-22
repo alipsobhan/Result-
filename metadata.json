@@ -1,0 +1,8 @@
+{
+  "name": "Question Maker & Result Manager",
+  "description": "An AI-powered Question Paper Generator and Result Management System with Bangla support, exam timers, PDF exports, and Cloud/Offline sync.",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}
